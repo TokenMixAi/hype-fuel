@@ -1,0 +1,21 @@
+# Security headers, applied by Cloudflare's static asset handler.
+#
+# This site asks people to sign messages that move their money, so the priorities are keeping it out
+# of a frame that could disguise what is being signed, and refusing to load script from anywhere
+# but our own origin.
+#
+# Worth knowing if you change the app:
+#   script-src is strict, which the build depends on. Nothing inline executes. The JSON-LD block is
+#     a data block, not script, so it is unaffected. Adding an inline handler or script tag will
+#     break the page.
+#   style-src needs 'unsafe-inline' because React writes style attributes for the `style={{...}}`
+#     props used across the pages. Removing those props is the only way to drop it.
+#   connect-src lists the RPC because wagmi talks to HyperEVM straight from the browser, not only
+#     through the relayer.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.hypefuel.me https://rpc.hyperliquid.xyz; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=15552000; includeSubDomains

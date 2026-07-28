@@ -26,9 +26,10 @@ interface Props {
   config: ConfigResponse | null;
   configError: string | null;
   onFilled?: () => void;
+  onRetryConfig?: () => void;
 }
 
-export function SwapCard({config, configError, onFilled}: Props) {
+export function SwapCard({config, configError, onFilled, onRetryConfig}: Props) {
   /**
    * `chainId` here is the wallet's actual chain. `useChainId()` cannot be used for this: wagmi
    * ignores any chain outside its configured list, so it would keep reporting HyperEVM while the
@@ -44,10 +45,26 @@ export function SwapCard({config, configError, onFilled}: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [quoted, setQuoted] = useState<QuoteResponse | null>(null);
-  const [result, setResult] = useState<{hash: string; url: string; hype: string} | null>(null);
+  /**
+   * Survives every outcome once the relayer has broadcast, including a revert, because the explorer
+   * link is the only thing that can tell the user what really happened to their USDC.
+   */
+  const [result, setResult] = useState<{
+    hash: string;
+    url: string;
+    hype: string;
+    outcome: "settled" | "unconfirmed" | "reverted";
+  } | null>(null);
 
   const onWrongChain = isConnected && chainId !== HYPEREVM_CHAIN_ID;
   const busy = phase !== "idle" && phase !== "done";
+
+  /**
+   * The relayer reports a null price when the perp and spot feeds disagree beyond tolerance. Every
+   * quote will refuse for as long as that holds, so the action is blocked here instead of letting
+   * the user sign into a guaranteed failure.
+   */
+  const pricingUnavailable = config !== null && config.hypePriceUsd1e8 === null;
 
   const usdcIn = useMemo(() => {
     try {
@@ -155,19 +172,28 @@ export function SwapCard({config, configError, onFilled}: Props) {
       setPhase("submitting");
       const fill = await submitFill(fresh.order, signature);
 
-      setPhase("confirming");
-      const confirmed = await waitForConfirmation(fill.transactionHash);
-      if (confirmed === "failed") {
-        throw new RelayerError("reverted", "The transaction reverted on-chain. Please try again.");
-      }
-
-      setResult({
+      // Recorded before polling. The transaction is already broadcast at this point, so whatever
+      // happens next the user must still be able to reach it on the explorer.
+      const broadcast = {
         hash: fill.transactionHash,
         url: fill.explorerUrl,
         hype: fill.hypeOutFormatted,
-      });
+      };
+      setResult({...broadcast, outcome: "unconfirmed"});
+
+      setPhase("confirming");
+      const confirmed = await waitForConfirmation(fill.transactionHash);
+
+      // A revert is reported in place rather than thrown, so the hash stays on screen.
+      if (confirmed === "failed") {
+        setResult({...broadcast, outcome: "reverted"});
+        setPhase("idle");
+        return;
+      }
+
+      setResult({...broadcast, outcome: confirmed === "confirmed" ? "settled" : "unconfirmed"});
       setPhase("done");
-      onFilled?.();
+      if (confirmed === "confirmed") onFilled?.();
     } catch (caught) {
       setPhase("idle");
       setError(describeError(caught));
@@ -177,14 +203,22 @@ export function SwapCard({config, configError, onFilled}: Props) {
   if (configError) {
     return (
       <div className="swap-card">
-        <div className="notice notice-error">{configError}</div>
+        <div className="notice notice-error" role="alert">
+          {configError}
+        </div>
+        {onRetryConfig ? (
+          <button type="button" className="btn btn-primary btn-block" onClick={onRetryConfig}>
+            Try again
+          </button>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="swap-card">
-      <h2>Get HYPE for gas</h2>
+      {/* The card is this route's main heading, so it carries the h1 rather than starting at h2. */}
+      <h1>Get HYPE for gas</h1>
       <p className="hint">
         Pay in USDC, receive native HYPE. You never need gas to start.
       </p>
@@ -194,7 +228,7 @@ export function SwapCard({config, configError, onFilled}: Props) {
           <span>You pay</span>
           {limits ? (
             <span className="mono">
-              ${formatUsdc(limits.min)} – ${formatUsdc(limits.max)}
+              ${formatUsdc(limits.min)} to ${formatUsdc(limits.max)}
             </span>
           ) : null}
         </div>
@@ -212,6 +246,8 @@ export function SwapCard({config, configError, onFilled}: Props) {
               }
             }}
             aria-label="USDC amount"
+            aria-invalid={amountError ? true : undefined}
+            aria-describedby={amountError ? "amount-error" : undefined}
           />
           <span className="token-tag">USDC</span>
         </div>
@@ -243,7 +279,7 @@ export function SwapCard({config, configError, onFilled}: Props) {
             ? formatHype(quoted.quote.hypeOut)
             : preview
               ? `≈ ${formatHype(preview.hypeOut)}`
-              : "—"}
+              : "0.0000"}
           <span>HYPE</span>
         </div>
 
@@ -257,7 +293,7 @@ export function SwapCard({config, configError, onFilled}: Props) {
                   ? `$${formatUsdc(preview.feeUsdc)}`
                   : config
                     ? config.fee.description
-                    : "—"}
+                    : "..."}
             </dd>
           </div>
           {quoted ? (
@@ -280,13 +316,37 @@ export function SwapCard({config, configError, onFilled}: Props) {
         </dl>
       </div>
 
-      {error ? <div className="notice notice-error">{error}</div> : null}
-      {amountError ? <div className="notice notice-info">{amountError}</div> : null}
+      {error ? (
+        <div className="notice notice-error" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {amountError ? (
+        <div className="notice notice-info" id="amount-error">
+          {amountError}
+        </div>
+      ) : null}
 
       {result ? (
-        <div className="notice notice-success">
+        <div
+          className={`notice notice-${result.outcome === "settled" ? "success" : result.outcome === "reverted" ? "error" : "info"}`}
+          role={result.outcome === "reverted" ? "alert" : "status"}
+          aria-live="polite"
+        >
           <div>
-            Sent {result.hype} HYPE to your wallet.{" "}
+            {result.outcome === "settled" ? (
+              <>Sent {result.hype} HYPE to your wallet. </>
+            ) : result.outcome === "reverted" ? (
+              <>
+                The transaction reverted, so your USDC was not taken. Prices move quickly, so
+                trying again usually works.{" "}
+              </>
+            ) : (
+              <>
+                Submitted, but it has not confirmed yet. Your USDC is only taken if it succeeds, so
+                check the transaction before trying again.{" "}
+              </>
+            )}
             <a href={result.url} target="_blank" rel="noreferrer">
               View transaction
             </a>
@@ -329,36 +389,62 @@ export function SwapCard({config, configError, onFilled}: Props) {
         <button type="button" className="btn btn-primary btn-block" disabled>
           Temporarily paused
         </button>
+      ) : pricingUnavailable ? (
+        <button type="button" className="btn btn-primary btn-block" disabled>
+          Pricing unavailable
+        </button>
       ) : (
         <button
           type="button"
           className="btn btn-primary btn-block"
-          disabled={busy || !usdcIn || Boolean(amountError)}
+          disabled={busy || !config || !usdcIn || Boolean(amountError)}
           onClick={run}
         >
           {phase === "done" ? "Buy more HYPE" : busy ? phaseLabel(phase) : "Get HYPE"}
         </button>
       )}
 
-      {busy ? (
-        <div className="status-line">
-          <span className="spinner" />
-          <span>{phaseHint(phase)}</span>
+      {pricingUnavailable ? (
+        <div className="notice notice-info" role="status">
+          The HYPE price feeds do not currently agree, so we will not quote a rate. Nothing has been
+          taken from your wallet. This usually clears within a few minutes.
         </div>
       ) : null}
+
+      <div className="status-line-slot" role="status" aria-live="polite">
+        {busy ? (
+          <div className="status-line">
+            <span className="spinner" />
+            <span>{phaseHint(phase)}</span>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-/** Polls for a receipt. Fills usually land within a couple of one-second blocks. */
-async function waitForConfirmation(hash: `0x${string}`): Promise<"confirmed" | "failed"> {
+/**
+ * Polls for a receipt. Fills usually land within a couple of one-second blocks.
+ *
+ * Runs out to `"unknown"` rather than assuming success. A transaction that never confirms and one
+ * that confirmed while we were not looking are indistinguishable from here, and claiming HYPE
+ * arrived when it may not have is the more expensive mistake: the user goes off to spend gas they
+ * do not have. A polling error is treated the same way, since the transaction is already broadcast
+ * and the hash is the useful thing to hand back.
+ */
+async function waitForConfirmation(
+  hash: `0x${string}`,
+): Promise<"confirmed" | "failed" | "unknown"> {
   for (let attempt = 0; attempt < 30; attempt++) {
-    const {status} = await fetchStatus(hash);
-    if (status === "confirmed" || status === "failed") return status;
+    try {
+      const {status} = await fetchStatus(hash);
+      if (status === "confirmed" || status === "failed") return status;
+    } catch {
+      return "unknown";
+    }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
-  // Treat a slow block as success rather than alarming the user; the explorer link is authoritative.
-  return "confirmed";
+  return "unknown";
 }
 
 function phaseLabel(phase: Phase): string {

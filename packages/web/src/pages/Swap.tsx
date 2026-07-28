@@ -7,7 +7,12 @@ export function Swap() {
   return (
     <main className="container swap-wrap">
       <div style={{width: "100%", maxWidth: 460}}>
-        <SwapCard config={config} configError={error} onFilled={reload} />
+        <SwapCard
+          config={config}
+          configError={error}
+          onFilled={reload}
+          onRetryConfig={reload}
+        />
 
         {config ? (
           <p

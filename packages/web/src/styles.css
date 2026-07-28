@@ -44,6 +44,31 @@ html {
   scroll-behavior: smooth;
 }
 
+/*
+ * One visible focus ring for everything reachable by keyboard. Several controls style their own
+ * hover and active states but had nothing for focus, which left keyboard users unable to see where
+ * they were. :focus-visible keeps it off mouse clicks.
+ */
+:where(a, button, input, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -199,6 +224,33 @@ section {
 @media (max-width: 620px) {
   .nav-link.hide-sm {
     display: none;
+  }
+}
+
+/*
+ * Connected, the header holds a wordmark, two links and an address. On a narrow phone that does not
+ * fit, so the address loses its padding and truncates rather than shunting the nav off screen.
+ */
+@media (max-width: 460px) {
+  .header-inner {
+    gap: 8px;
+  }
+
+  .nav {
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .nav-link {
+    padding: 8px 8px;
+  }
+
+  .wallet-chip {
+    padding: 8px 10px;
+    max-width: 116px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 
@@ -389,9 +441,10 @@ section {
   box-shadow: 0 24px 60px #04211b80;
 }
 
-.swap-card h2 {
+.swap-card h1 {
   font-size: 21px;
-  margin-bottom: 6px;
+  line-height: 1.3;
+  margin: 0 0 6px;
 }
 
 .swap-card > p.hint {
@@ -659,7 +712,12 @@ section {
 
 .docs-layout {
   display: grid;
-  grid-template-columns: 210px 1fr;
+  /*
+   * minmax(0, 1fr) rather than 1fr, because a grid item defaults to min-width: auto and would
+   * otherwise be widened by the code blocks it contains. That defeats their own overflow-x and
+   * pushes the whole page sideways, which is severe on a phone.
+   */
+  grid-template-columns: 210px minmax(0, 1fr);
   gap: 44px;
   align-items: start;
   padding-top: 44px;
@@ -668,7 +726,7 @@ section {
 
 @media (max-width: 900px) {
   .docs-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 22px;
   }
 }
@@ -693,10 +751,34 @@ section {
   text-decoration: none;
 }
 
+/* Pairs with the minmax(0, 1fr) track above; both are needed to contain wide code blocks. */
+.prose {
+  min-width: 0;
+}
+
+.prose-title {
+  font-size: 33px;
+  margin: 0 0 6px;
+}
+
 .prose h2 {
   font-size: 27px;
   margin: 44px 0 14px;
   scroll-margin-top: 92px;
+}
+
+.prose h2:first-of-type {
+  margin-top: 26px;
+}
+
+/*
+ * Tables carry nowrap cells, so they need their own scroll container rather than widening the
+ * column.
+ */
+.prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .prose h2:first-child {

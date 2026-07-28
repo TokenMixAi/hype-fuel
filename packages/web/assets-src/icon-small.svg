@@ -1,0 +1,26 @@
+<!--
+  Tuned for 16 to 48px, where the tab favicon actually lives. The hairline border and the tighter
+  bolt of the full-size mark both turn to mush at that scale, so this one drops the border and
+  fills far more of the tile.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>HypeFuel</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c3a30" />
+      <stop offset="1" stop-color="#04211b" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="12" fill="url(#tile)" />
+
+  <g transform="translate(7.4 6.2) scale(2.05)">
+    <path
+      d="M13.4 2 4 13.6h5.7L8.9 22 20 9.9h-6.2L13.4 2Z"
+      fill="#97fce4"
+      stroke="#97fce4"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>

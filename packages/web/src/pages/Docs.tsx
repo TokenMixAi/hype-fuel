@@ -11,40 +11,48 @@ const SECTIONS = [
   ["security", "Security notes"],
 ] as const;
 
-const QUICKSTART = `import {
-  buildAuthorizationTypedData,
-  deserializeOrder,
-  serializeOrder,
-} from "@hypefuel/sdk";
+const QUICKSTART = `import {deserializeOrder, serializeOrder} from "@hypefuel/sdk";
 
 const API = "${API_URL}";
 
+// Every endpoint reports failures as {error: {code, message}}, so check the status
+// before reading the body. A 400 here is usually an amount outside the limits.
+async function call(path, body) {
+  const response = await fetch(\`\${API}\${path}\`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error?.message ?? response.statusText);
+  return payload;
+}
+
 // 1. Ask the relayer to price the top-up. It reads the HYPE price on-chain and
 //    returns the exact order to sign.
-const quoteResponse = await fetch(\`\${API}/v1/quote\`, {
-  method: "POST",
-  headers: {"Content-Type": "application/json"},
-  body: JSON.stringify({user: account, usdcIn: "10000000"}), // $10, 6 decimals
-}).then((response) => response.json());
+const quoteResponse = await call("/v1/quote", {
+  user: account,
+  usdcIn: "10000000", // $10, 6 decimals
+});
 
 const order = deserializeOrder(quoteResponse.order);
 
 // 2. Have the user sign it. This is a signature, not a transaction, so it needs no gas.
-const typedData = buildAuthorizationTypedData(order, quoteResponse.order.to);
+//    The response already carries the payload to sign, so there is nothing to rebuild.
+const {domain, types, primaryType, message} = quoteResponse.typedData;
 const signature = await walletClient.signTypedData({
   account,
-  domain: typedData.domain,
-  types: typedData.types,
-  primaryType: typedData.primaryType,
-  message: typedData.message,
+  domain,
+  types,
+  primaryType,
+  message,
 });
 
 // 3. Hand it back to the relayer, which broadcasts it and pays the gas.
-const {transactionHash} = await fetch(\`\${API}/v1/fill\`, {
-  method: "POST",
-  headers: {"Content-Type": "application/json"},
-  body: JSON.stringify({order: serializeOrder(order), signature}),
-}).then((response) => response.json());`;
+const {transactionHash} = await call("/v1/fill", {
+  order: serializeOrder(order),
+  signature,
+});`;
 
 const CURL = `# What it costs and how much HYPE is in stock
 curl ${API_URL}/v1/config
@@ -82,6 +90,7 @@ export function Docs() {
       </nav>
 
       <div className="prose">
+        <h1 className="prose-title">Docs</h1>
         <h2 id="overview">Overview</h2>
         <p>
           HypeFuel sells native HYPE to wallets that hold USDC but no gas. The user signs one
@@ -103,7 +112,7 @@ export function Docs() {
           The authorisation itself is an <strong>EIP-3009</strong>{" "}
           <code>ReceiveWithAuthorization</code> message over USDC. It is a better fit than{" "}
           <code>permit</code> here because it moves the tokens in a single atomic step, carries
-          its own expiry, and refuses to execute unless the caller is the named payee — so the
+          its own expiry, and refuses to execute unless the caller is the named payee, so the
           signature is safe to hand to a relayer.
         </p>
         <p>
@@ -135,8 +144,9 @@ export function Docs() {
         <h3>GET /v1/config</h3>
         <p>
           Current fee schedule, order limits and HYPE inventory. Call this to render live pricing
-          rather than hardcoding it, since the fee is an on-chain setting that can change within
-          its hard ceiling.
+          rather than hardcoding it, since the fee is an on-chain setting the owner can change. The
+          live implementation caps it at 5%, though an upgrade could lift that, so treat each
+          order's <code>minHypeOut</code> as the binding number rather than the advertised fee.
         </p>
         <p>
           Bound your amount input with <code>limits.maxFillableUsdc</code> rather than{" "}
@@ -298,7 +308,7 @@ export function Docs() {
                 <td>
                   <code>rate_limited</code>
                 </td>
-                <td>Too many requests from one address.</td>
+                <td>Too many requests from one IP address.</td>
               </tr>
             </tbody>
           </table>

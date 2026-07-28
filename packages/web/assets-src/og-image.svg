@@ -1,0 +1,131 @@
+<!--
+  Social card, 1200x630. Rendered to public/og-image.png by render.sh.
+
+  Kept to one headline, one sentence and three facts, because this is mostly seen at thumbnail
+  size in a timeline.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#07281f" />
+      <stop offset="1" stop-color="#04201a" />
+    </linearGradient>
+
+    <radialGradient id="bloomTop" cx="0.42" cy="0" r="0.75">
+      <stop offset="0" stop-color="#0e7a5f" stop-opacity="0.42" />
+      <stop offset="1" stop-color="#0e7a5f" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="bloomRight" cx="0.78" cy="0.46" r="0.5">
+      <stop offset="0" stop-color="#8ff3d9" stop-opacity="0.20" />
+      <stop offset="1" stop-color="#8ff3d9" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="boltFill" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#b6fff0" />
+      <stop offset="0.55" stop-color="#8ff3d9" />
+      <stop offset="1" stop-color="#4fd9b8" />
+    </linearGradient>
+
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="26" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="blur" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect width="1200" height="630" fill="url(#bloomTop)" />
+  <rect width="1200" height="630" fill="url(#bloomRight)" />
+
+  <!-- Hairline frame, so the card keeps an edge against a white timeline. -->
+  <rect x="0.5" y="0.5" width="1199" height="629" fill="none" stroke="#8ff3d9" stroke-opacity="0.14" />
+  <rect y="626" width="1200" height="4" fill="#8ff3d9" fill-opacity="0.55" />
+
+  <!-- Oversized bolt, bleeding off the right edge. -->
+  <g transform="translate(838 96)">
+    <circle cx="152" cy="220" r="196" fill="none" stroke="#8ff3d9" stroke-opacity="0.10" stroke-width="1.5" />
+    <circle cx="152" cy="220" r="252" fill="none" stroke="#8ff3d9" stroke-opacity="0.06" stroke-width="1.5" />
+    <g transform="translate(-6 22) scale(13.4)" opacity="0.5" filter="url(#glow)">
+      <path d="M13.4 2 4 13.6h5.7L8.9 22 20 9.9h-6.2L13.4 2Z" fill="#8ff3d9" />
+    </g>
+    <g transform="translate(-6 22) scale(13.4)">
+      <path
+        d="M13.4 2 4 13.6h5.7L8.9 22 20 9.9h-6.2L13.4 2Z"
+        fill="url(#boltFill)"
+        stroke="#c9fff2"
+        stroke-opacity="0.5"
+        stroke-width="0.5"
+        stroke-linejoin="round"
+      />
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(80 74)">
+    <g transform="scale(1.55)">
+      <path
+        d="M13.4 2 4 13.6h5.7L8.9 22 20 9.9h-6.2L13.4 2Z"
+        fill="#8ff3d9"
+        stroke="#8ff3d9"
+        stroke-width="1.2"
+        stroke-linejoin="round"
+      />
+    </g>
+    <text
+      x="52"
+      y="29"
+      font-family="Space Grotesk"
+      font-size="30"
+      font-weight="700"
+      fill="#ecf8f3"
+      letter-spacing="0.2"
+    >HypeFuel</text>
+  </g>
+
+  <!-- Headline -->
+  <text
+    x="80"
+    y="256"
+    font-family="Space Grotesk"
+    font-size="50"
+    font-weight="500"
+    fill="#8ff3d9"
+    letter-spacing="0.3"
+  >Out of gas on HyperEVM?</text>
+
+  <text x="80" y="344" font-family="Space Grotesk" font-size="72" font-weight="700" fill="#ffffff">Get HYPE using</text>
+  <text x="80" y="424" font-family="Space Grotesk" font-size="72" font-weight="700" fill="#ffffff">only your USDC.</text>
+
+  <text x="80" y="480" font-family="Space Grotesk" font-size="27" fill="#9fc0b6">
+    Sign one message. Nothing to approve, no gas to pay.
+  </text>
+
+  <!-- Facts -->
+  <g transform="translate(80 522)">
+    <g>
+      <rect width="150" height="46" rx="23" fill="#8ff3d9" fill-opacity="0.10" stroke="#8ff3d9" stroke-opacity="0.30" />
+      <text x="75" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="19" fill="#8ff3d9">$1 to $50</text>
+    </g>
+    <g transform="translate(164 0)">
+      <rect width="126" height="46" rx="23" fill="#8ff3d9" fill-opacity="0.10" stroke="#8ff3d9" stroke-opacity="0.30" />
+      <text x="63" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="19" fill="#8ff3d9">3% fee</text>
+    </g>
+    <g transform="translate(304 0)">
+      <rect width="234" height="46" rx="23" fill="#8ff3d9" fill-opacity="0.10" stroke="#8ff3d9" stroke-opacity="0.30" />
+      <text x="117" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="19" fill="#8ff3d9">arrives in seconds</text>
+    </g>
+  </g>
+
+  <text
+    x="1120"
+    y="588"
+    text-anchor="end"
+    font-family="JetBrains Mono"
+    font-size="21"
+    fill="#8ff3d9"
+    fill-opacity="0.75"
+  >hypefuel.me</text>
+</svg>

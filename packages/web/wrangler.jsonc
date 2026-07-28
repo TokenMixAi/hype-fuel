@@ -2,9 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hypefuel-web",
   "compatibility_date": "2026-07-01",
+  "routes": [{"pattern": "hypefuel.me", "custom_domain": true}],
+  // Declaring a route otherwise turns the workers.dev subdomain off, and that address was
+  // published before the domain existed. `rel=canonical` points crawlers at hypefuel.me.
+  "workers_dev": true,
   "assets": {
     "directory": "./dist",
-    // Serve index.html for client-side routes such as /app and /docs.
-    "not_found_handling": "single-page-application"
+    // Anything without its own HTML file falls back to the app shell, so client-side routes work
+    // on a cold load.
+    "not_found_handling": "single-page-application",
+    // The build emits app/index.html and docs/index.html with per-route titles and canonicals.
+    // Under the default auto-trailing-slash those are only reachable at /docs/, and a request for
+    // /docs would fall through to the shell and serve the landing page's metadata instead.
+    // Dropping the slash makes /docs the serving path, which is what the canonical tags claim.
+    "html_handling": "drop-trailing-slash"
   }
 }

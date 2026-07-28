@@ -2,6 +2,7 @@ import {Link, NavLink, Outlet} from "react-router-dom";
 import {useAccount, useDisconnect} from "wagmi";
 
 import {GITHUB_URL, PRODUCT_NAME} from "../config";
+import {useDocumentMeta} from "../hooks/useDocumentMeta";
 
 function Logo() {
   return (
@@ -20,6 +21,8 @@ function Logo() {
 export function Layout() {
   const {address, isConnected} = useAccount();
   const {disconnect} = useDisconnect();
+
+  useDocumentMeta();
 
   return (
     <div className="shell">
@@ -65,7 +68,8 @@ export function Layout() {
       <footer className="footer">
         <div className="container footer-inner">
           <span>
-            {PRODUCT_NAME} — gasless HYPE top-ups on HyperEVM. Not affiliated with Hyperliquid.
+            {PRODUCT_NAME} gives gasless HYPE top-ups on HyperEVM. Not affiliated with
+            Hyperliquid.
           </span>
           <div className="footer-links">
             <Link to="/docs">Docs</Link>

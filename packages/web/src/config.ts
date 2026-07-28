@@ -7,16 +7,17 @@ import {NATIVE_USDC_ADDRESS, type Address} from "@hypefuel/sdk";
  * are public information.
  */
 export const API_URL: string = (
-  import.meta.env.VITE_API_URL ?? "https://hypefuel-api.chase-63b.workers.dev"
+  import.meta.env.VITE_API_URL ?? "https://api.hypefuel.me"
 ).replace(/\/+$/, "");
 
-/** Deployed HypeFuel contract. The app reads the authoritative value from `/v1/config`. */
+/** Deployed HypeFuel proxy. The app reads the authoritative value from `/v1/config`. */
 export const FUEL_ADDRESS = (import.meta.env.VITE_FUEL_ADDRESS ??
-  "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861") as Address;
+  "0x42b06b1d9a07Fc3925C518dbf9475E7cA80DC8DF") as Address;
 
 export const USDC_ADDRESS = NATIVE_USDC_ADDRESS;
 
-export const PRODUCT_NAME = "HypeFuel";
+/** Defined in content/site.ts, which the build also reads, and re-exported so callers have one import. */
+export {PRODUCT_NAME} from "./content/site";
 
 export const GITHUB_URL = "https://github.com/chase-mew/hype-fuel";
 

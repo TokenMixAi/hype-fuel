@@ -2,6 +2,7 @@ import {Link} from "react-router-dom";
 
 import {useRelayerConfig} from "../hooks/useRelayerConfig";
 import {PRODUCT_NAME} from "../config";
+import {FAQ} from "../content/site";
 
 const STEPS = [
   {
@@ -15,33 +16,6 @@ const STEPS = [
   {
     title: "HYPE arrives",
     body: "We submit the transaction and pay the gas ourselves. Native HYPE lands in the same wallet seconds later.",
-  },
-];
-
-const FAQ = [
-  {
-    q: "How can I do this without any HYPE for gas?",
-    a: "You never send a transaction. You sign a message, which happens entirely inside your wallet and touches no blockchain. We broadcast the resulting transaction and pay the gas from our own wallet.",
-  },
-  {
-    q: "What exactly am I authorising?",
-    a: "A single EIP-3009 transfer authorisation for the precise USDC amount you chose. It names our contract as the only possible recipient, expires in a few minutes, and can be used once. It is not a blanket approval, so we cannot come back for more later.",
-  },
-  {
-    q: "How is the HYPE price decided?",
-    a: "On-chain, by the contract itself. It reads HYPE's price directly from Hyperliquid's HyperCore oracle precompiles at the moment of execution and cross-checks the perp oracle against the spot market. We cannot choose the rate you get.",
-  },
-  {
-    q: "What stops the price moving against me?",
-    a: "Your signature commits to a minimum amount of HYPE. If the market moves so far that you would receive less than that, the transaction reverts and your USDC stays exactly where it is.",
-  },
-  {
-    q: "Do I have to use this website?",
-    a: "No. The contract is permissionless and the relayer is a plain HTTP API, so any wallet or app can integrate it directly. The docs cover the whole flow.",
-  },
-  {
-    q: "Is this affiliated with Hyperliquid?",
-    a: "No. HypeFuel is an independent project that happens to build on HyperEVM and read Hyperliquid's public oracle precompiles.",
   },
 ];
 
@@ -76,7 +50,7 @@ export function Landing() {
           <div className="stat">
             <div className="stat-label">Fee</div>
             <div className="stat-value">
-              {config ? `${config.fee.percent}%` : "—"}
+              {config ? `${config.fee.percent}%` : "..."}
               {config ? (
                 <span style={{fontSize: 14, color: "var(--text-muted)"}}>
                   {" "}
@@ -89,8 +63,8 @@ export function Landing() {
             <div className="stat-label">Top-up range</div>
             <div className="stat-value">
               {config
-                ? `$${config.limits.minUsdcFormatted} – $${config.limits.maxUsdcFormatted}`
-                : "—"}
+                ? `$${config.limits.minUsdcFormatted} to $${config.limits.maxUsdcFormatted}`
+                : "..."}
             </div>
           </div>
           <div className="stat">
@@ -138,8 +112,9 @@ export function Landing() {
             <h3>Pricing you can verify</h3>
             <p>
               Rates come from Hyperliquid's own oracle precompiles, read on-chain during the
-              swap. The fee is a public contract setting with a hard ceiling that cannot be
-              raised past it.
+              swap. The fee is a public contract setting, capped at 5% by the implementation that
+              is live today. That cap is not eternal, because the contract can be upgraded, which
+              is why the real promise is the minimum HYPE your signature commits to.
             </p>
           </div>
           <div className="panel">

@@ -3,21 +3,60 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HypeFuel — Get HYPE gas using only USDC</title>
-    <meta
-      name="description"
-      content="Stuck with USDC on HyperEVM and no HYPE for gas? Sign one message and receive HYPE instantly. No gas required to start."
-    />
+
+    <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="HypeFuel" />
     <meta name="theme-color" content="#06231e" />
 
-    <meta property="og:title" content="HypeFuel — Get HYPE gas using only USDC" />
+    <!--
+      Metadata. The build emits a copy of this file per route with these values swapped, so a cold
+      load of /app or /docs is already correct without running any JavaScript. `useDocumentMeta`
+      keeps them in step after a client-side navigation.
+    -->
+    <link rel="canonical" href="https://hypefuel.me/" data-seo-canonical />
+    <title>HypeFuel | Get HYPE for gas on HyperEVM using only USDC</title>
+    <meta
+      name="description"
+      content="Stranded on HyperEVM with USDC and no HYPE for gas? Sign one message and native HYPE arrives in seconds. No gas to pay, no approval, no bridging."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- Socials -->
+    <meta property="og:site_name" content="HypeFuel" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://hypefuel.me/" />
+    <meta property="og:title" content="Out of gas on HyperEVM? Get HYPE using only USDC" />
     <meta
       property="og:description"
-      content="Sign one message, receive HYPE. The gas-free way to get gas on HyperEVM."
+      content="Sign one message and native HYPE lands in your wallet seconds later. Nothing to approve and no gas to pay, so an empty wallet is no longer a dead end."
     />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image" content="https://hypefuel.me/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="HypeFuel: get HYPE for gas on HyperEVM using only USDC, from $1 to $50 with a 3% fee."
+    />
 
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Out of gas on HyperEVM? Get HYPE using only USDC" />
+    <meta
+      name="twitter:description"
+      content="Sign one message and native HYPE lands in your wallet seconds later. Nothing to approve and no gas to pay, so an empty wallet is no longer a dead end."
+    />
+    <meta name="twitter:image" content="https://hypefuel.me/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="HypeFuel: get HYPE for gas on HyperEVM using only USDC, from $1 to $50 with a 3% fee."
+    />
+
+    <!-- The first paint is blocked on /v1/config, so start the handshake early. -->
+    <link rel="preconnect" href="https://api.hypefuel.me" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
