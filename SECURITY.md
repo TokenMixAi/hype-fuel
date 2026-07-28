@@ -1,7 +1,8 @@
 # Security
 
 HypeFuel holds funds. The contract custodies a HYPE float and the USDC it takes in, and the relayer
-holds a hot key that pays gas for every fill. Please treat findings accordingly.
+holds a hot key that pays gas for every fill. That hot key is also the owner key, so it is not a
+low-privilege gas wallet; see the trust assumptions below. Please treat findings accordingly.
 
 ## Reporting a vulnerability
 
@@ -41,6 +42,11 @@ Worth stating plainly, because it frames what actually counts as a vulnerability
 - **The owner key can upgrade the implementation.** A UUPS proxy means the owner can change the
   logic behind a fixed address, so users are trusting that key not to be misused or lost. This is
   the largest trust assumption in the system.
+- **One wallet is both owner and relayer.** The key that pays gas for fills, and therefore lives in
+  the relayer's hosting environment, is the same key that owns the contract. Anything that exposes
+  it exposes the ability to upgrade and to withdraw, not just the gas balance. It is a deliberate
+  choice for a float this size rather than an oversight, and it is the assumption to weigh most
+  heavily before trusting the contract with a larger amount.
 - **The owner can pause fills and withdraw contract funds.** Neither can take USDC that a user has
   not already signed away.
 - **A signature cannot be stretched.** Each EIP-3009 authorisation names the contract as the only
