@@ -47,6 +47,8 @@ jobs:
           workingDirectory: packages/api
           # Without this the action shells out to npm, which cannot resolve workspace:* deps.
           packageManager: pnpm
+          # The action's default is too old to read wrangler.jsonc.
+          wranglerVersion: "4.114.0"
 
       - name: Build web
         run: pnpm --filter @hypefuel/web build
@@ -58,3 +60,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/web
           packageManager: pnpm
+          wranglerVersion: "4.114.0"
