@@ -138,6 +138,12 @@ export function Docs() {
           rather than hardcoding it, since the fee is an on-chain setting that can change within
           its hard ceiling.
         </p>
+        <p>
+          Bound your amount input with <code>limits.maxFillableUsdc</code> rather than{" "}
+          <code>limits.maxUsdc</code>. The latter is the contract's configured ceiling, while the
+          former also accounts for the HYPE we currently hold, so anything above it is certain to
+          be rejected.
+        </p>
 
         <h3>POST /v1/quote</h3>
         <p>
@@ -250,7 +256,10 @@ export function Docs() {
                 <td>
                   <code>insufficient_liquidity</code>
                 </td>
-                <td>We are out of HYPE for that size. Retry smaller or later.</td>
+                <td>
+                  We are out of HYPE for that size. The response carries{" "}
+                  <code>maxFillableUsdc</code>, so retry at or below it.
+                </td>
               </tr>
               <tr>
                 <td>

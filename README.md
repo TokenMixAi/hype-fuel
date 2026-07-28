@@ -163,6 +163,17 @@ Set `FUEL_ADDRESS` in `packages/api/wrangler.jsonc` after deploying the contract
 `.github/workflows/deploy.yml` does both automatically on push to `main`, given
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets.
 
+`CLOUDFLARE_ACCOUNT_ID` is already set. To finish wiring up automatic deploys, create a token
+with the **Edit Cloudflare Workers** template at
+<https://dash.cloudflare.com/profile/api-tokens> and add it:
+
+```bash
+gh secret set CLOUDFLARE_API_TOKEN
+```
+
+Until then, deploy by hand with the commands above; the workflow reaches Cloudflare and stops
+there.
+
 ## Operating it
 
 The contract holds HYPE inventory and accumulates USDC from fills.
