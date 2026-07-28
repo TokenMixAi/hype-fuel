@@ -426,8 +426,11 @@ contract RebalanceTest is BaseTest {
         deal(address(token), address(fuel), 100_000e6);
 
         try fuel.rebalance() returns (uint256 usdcIn, uint256 hypeOut) {
-            uint256 oracleValue = (usdcIn * 1e20) / PRICE_1E8;
-            assertGe(hypeOut * BPS, oracleValue * (BPS - REBALANCE_SLIPPAGE_BPS), "within tolerance");
+            // Divides once at the end, as the contract does. Converting to HYPE first and applying
+            // the slippage second discards a wei that the multiplication by BPS then scales up to
+            // nearly BPS, so the bound came out up to 9,999 too strict and some inputs tripped it.
+            uint256 minAcceptable = (usdcIn * 1e20 * (BPS - REBALANCE_SLIPPAGE_BPS)) / (PRICE_1E8 * BPS);
+            assertGe(hypeOut, minAcceptable, "within tolerance");
             assertEq(address(fuel).balance, hypeBalance + hypeOut, "inventory grew by exactly the purchase");
             assertEq(token.balanceOf(address(fuel)), 100_000e6 - usdcIn, "usdc fell by exactly the spend");
         } catch {
