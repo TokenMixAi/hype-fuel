@@ -45,6 +45,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/api
+          # Without this the action shells out to npm, which cannot resolve workspace:* deps.
+          packageManager: pnpm
 
       - name: Build web
         run: pnpm --filter @hypefuel/web build
@@ -55,3 +57,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/web
+          packageManager: pnpm
