@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hypefuel-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "FUEL_ADDRESS": "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861",
+    "RPC_URL": "https://rpc.hyperliquid.xyz/evm",
+    "ALLOWED_ORIGINS": "*"
+  },
+  // RELAYER_PRIVATE_KEY is a secret: `wrangler secret put RELAYER_PRIVATE_KEY`.
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        // 30 requests per minute per IP, enough for normal use but not for scripted abuse.
+        "simple": {"limit": 30, "period": 60}
+      }
+    ]
+  }
+}

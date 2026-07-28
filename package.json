@@ -1,0 +1,27 @@
+{
+  "name": "hypefuel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gasless HYPE top-ups on HyperEVM, paid for in USDC",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm --filter @hypefuel/sdk build && pnpm --filter @hypefuel/web build",
+    "test": "pnpm run test:contracts && pnpm run test:ts",
+    "test:ts": "pnpm -r --filter '!@hypefuel/web' test",
+    "test:contracts": "pnpm run --dir packages/contracts test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "fmt": "prettier --write \"packages/*/src/**/*.{ts,tsx,css}\" \"packages/*/*.json\"",
+    "dev:web": "pnpm --filter @hypefuel/web dev",
+    "dev:api": "pnpm --filter @hypefuel/api dev",
+    "deploy:api": "pnpm --filter @hypefuel/api deploy",
+    "deploy:web": "pnpm --filter @hypefuel/web deploy"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

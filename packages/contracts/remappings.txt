@@ -1,0 +1,4 @@
+@hyper-evm-lib/=lib/hyper-evm-lib/
+@openzeppelin/contracts/=lib/hyper-evm-lib/lib/openzeppelin-contracts/contracts/
+solady/=lib/solady/src/
+forge-std/=lib/forge-std/src/

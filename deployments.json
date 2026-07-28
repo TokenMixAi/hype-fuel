@@ -1,0 +1,21 @@
+{
+  "hyperevm": {
+    "chainId": 999,
+    "HypeFuel": {
+      "address": "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861",
+      "deploymentTransaction": "0xdbd74b338183b80e734da26c91551a969e3d7809b3ab2663d438cc3fb88c2fed",
+      "deploymentBlock": 41658820,
+      "deploymentGasUsed": 1543368,
+      "owner": "0x807571aA5E751b8D6b56b4D652EeE51c3DF55540",
+      "usdc": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "constructorArgs": {
+        "feeBps": 300,
+        "minFeeUsdc": 150000,
+        "minOrderUsdc": 1000000,
+        "maxOrderUsdc": 50000000,
+        "maxOracleDeviationBps": 500
+      },
+      "explorer": "https://hyperevmscan.io/address/0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861"
+    }
+  }
+}

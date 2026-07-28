@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hypefuel-web",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html for client-side routes such as /app and /docs.
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Foundry dependencies are git submodules.
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check formatting
+        working-directory: packages/contracts
+        run: forge fmt --check
+
+      - name: Build
+        working-directory: packages/contracts
+        run: forge build --sizes
+
+      - name: Test
+        working-directory: packages/contracts
+        # Fork tests need live RPC access and run in a separate, non-blocking job.
+        run: forge test --no-match-path 'test/*.fork.t.sol' -vv
+
+  fork-tests:
+    name: Fork tests (mainnet)
+    runs-on: ubuntu-latest
+    # Depends on public RPC availability, so a failure here should not block a merge.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Test against real USDC and live oracles
+        working-directory: packages/contracts
+        run: forge test --match-path 'test/HypeFuel.fork.t.sol' -vv
+
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        run: pnpm --filter @hypefuel/sdk build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test SDK
+        run: pnpm --filter @hypefuel/sdk test
+
+      - name: Build web
+        run: pnpm --filter @hypefuel/web build

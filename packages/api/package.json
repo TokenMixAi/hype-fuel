@@ -1,0 +1,23 @@
+{
+  "name": "@hypefuel/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HypeFuel relayer: accepts signed orders and broadcasts them on HyperEVM",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hypefuel/sdk": "workspace:*",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260728.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "wrangler": "^4.0.0"
+  }
+}

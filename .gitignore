@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Foundry
+packages/contracts/out/
+packages/contracts/cache/
+# Foundry writes resolved script values, including key material, under cache/.
+packages/contracts/broadcast/
+
+.wrangler/
+.dev.vars
+
+.DS_Store
+*.log
+coverage/
