@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {useAccount, useChainId, useConnect, useSignTypedData, useSwitchChain} from "wagmi";
+import {useAccount, useConnect, useSignTypedData, useSwitchChain} from "wagmi";
 import {
   HYPEREVM_CHAIN_ID,
   buildAuthorizationTypedData,
@@ -29,10 +29,14 @@ interface Props {
 }
 
 export function SwapCard({config, configError, onFilled}: Props) {
-  const {address, isConnected} = useAccount();
-  const chainId = useChainId();
+  /**
+   * `chainId` here is the wallet's actual chain. `useChainId()` cannot be used for this: wagmi
+   * ignores any chain outside its configured list, so it would keep reporting HyperEVM while the
+   * wallet sat on Ethereum, and signing would then fail inside the wallet instead.
+   */
+  const {address, isConnected, chainId} = useAccount();
   const {connect, connectors, isPending: isConnecting} = useConnect();
-  const {switchChain} = useSwitchChain();
+  const {switchChainAsync} = useSwitchChain();
   const {signTypedDataAsync} = useSignTypedData();
 
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
@@ -126,6 +130,12 @@ export function SwapCard({config, configError, onFilled}: Props) {
     setResult(null);
 
     try {
+      // A wallet will not sign typed data for a chain it is not on, and the user can switch
+      // networks after the button renders, so re-check rather than trusting the earlier guard.
+      if (chainId !== HYPEREVM_CHAIN_ID) {
+        await switchChainAsync({chainId: HYPEREVM_CHAIN_ID});
+      }
+
       // 1. Price the order on-chain and receive the exact payload to sign.
       setPhase("quoting");
       const fresh = await fetchQuote({user: address, usdcIn});
@@ -162,7 +172,7 @@ export function SwapCard({config, configError, onFilled}: Props) {
       setPhase("idle");
       setError(describeError(caught));
     }
-  }, [address, usdcIn, config, signTypedDataAsync, onFilled]);
+  }, [address, usdcIn, config, chainId, switchChainAsync, signTypedDataAsync, onFilled]);
 
   if (configError) {
     return (
@@ -304,7 +314,14 @@ export function SwapCard({config, configError, onFilled}: Props) {
         <button
           type="button"
           className="btn btn-primary btn-block"
-          onClick={() => switchChain({chainId: HYPEREVM_CHAIN_ID})}
+          onClick={async () => {
+            setError(null);
+            try {
+              await switchChainAsync({chainId: HYPEREVM_CHAIN_ID});
+            } catch (caught) {
+              setError(describeError(caught));
+            }
+          }}
         >
           Switch to HyperEVM
         </button>
@@ -381,10 +398,20 @@ function describeError(caught: unknown): string {
     if (message.includes("user rejected") || message.includes("user denied")) {
       return "You declined the signature.";
     }
+    // Wallets word this many different ways, hence matching on the shared parts.
+    if (
+      caught.name === "ChainMismatchError" ||
+      message.includes("chainid should be same") ||
+      (message.includes("chain") && message.includes("mismatch")) ||
+      message.includes("does not match the target chain")
+    ) {
+      return "Your wallet is on a different network. Switch it to HyperEVM and try again.";
+    }
     if (message.includes("does not support") || message.includes("unsupported")) {
       return "Your wallet could not sign this message. Try MetaMask or Rabby.";
     }
-    return caught.message;
+    // viem appends its own version and a docs link, which means nothing to a user.
+    return caught.message.split("\n")[0] ?? "Something went wrong. Please try again.";
   }
   return "Something went wrong. Please try again.";
 }
