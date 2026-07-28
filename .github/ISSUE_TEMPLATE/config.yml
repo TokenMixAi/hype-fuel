@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/chase-mew/hype-fuel/security/advisories/new
+    about: Please report anything that could put funds at risk privately, not as a public issue.
+  - name: Integration questions
+    url: https://hypefuel.me/docs
+    about: The docs cover quoting, signing and filling, plus the contract interface.

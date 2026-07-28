@@ -4,8 +4,15 @@
   "private": true,
   "description": "Gasless HYPE top-ups on HyperEVM, paid for in USDC",
   "packageManager": "pnpm@9.12.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chase-mew/hype-fuel.git"
+  },
+  "homepage": "https://hypefuel.me",
+  "bugs": "https://github.com/chase-mew/hype-fuel/issues",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "pnpm --filter @hypefuel/sdk build && pnpm --filter @hypefuel/web build",
@@ -13,7 +20,7 @@
     "test:ts": "pnpm -r --filter '!@hypefuel/web' test",
     "test:contracts": "pnpm run --dir packages/contracts test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
+    "lint": "node scripts/check-prose.mjs",
     "fmt": "prettier --write \"packages/*/src/**/*.{ts,tsx,css}\" \"packages/*/*.json\"",
     "dev:web": "pnpm --filter @hypefuel/web dev",
     "dev:api": "pnpm --filter @hypefuel/api dev",

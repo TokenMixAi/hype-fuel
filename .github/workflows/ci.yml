@@ -46,9 +46,10 @@ jobs:
 
       - uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Test against real USDC and live oracles
+      # Covers the rebalance suite too, which is the only test of the real Project X pool and WHYPE.
+      - name: Test against real USDC, live oracles and the real pool
         working-directory: packages/contracts
-        run: forge test --match-path 'test/HypeFuel.fork.t.sol' -vv
+        run: forge test --match-path 'test/*.fork.t.sol' -vv
 
   typescript:
     name: TypeScript
@@ -66,14 +67,29 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The web and api packages import the SDK's built output, so this comes first.
       - name: Build SDK
         run: pnpm --filter @hypefuel/sdk build
 
       - name: Typecheck
         run: pnpm -r typecheck
 
-      - name: Test SDK
-        run: pnpm --filter @hypefuel/sdk test
+      - name: Test
+        run: pnpm run test:ts
 
       - name: Build web
         run: pnpm --filter @hypefuel/web build
+
+  prose:
+    name: Punctuation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No dependencies needed, so this skips the install entirely.
+      - name: Check for banned punctuation
+        run: node scripts/check-prose.mjs

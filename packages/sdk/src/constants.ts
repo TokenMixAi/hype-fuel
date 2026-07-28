@@ -8,6 +8,15 @@ export const HYPEREVM_RPC_URL = "https://rpc.hyperliquid.xyz/evm";
 /** Circle's native USDC on HyperEVM. Six decimals, EIP-2612 and EIP-3009 capable. */
 export const NATIVE_USDC_ADDRESS: Address = "0xb88339CB7199b77E23DB6E890353E22632Ba630f";
 
+/**
+ * The deployed HypeFuel proxy on HyperEVM mainnet.
+ *
+ * A proxy, so it survives upgrades and is the address to integrate against. Prefer the `contract`
+ * field from the relayer's `/v1/config` when you have it; this constant is for callers talking
+ * straight to the chain with no relayer in the loop.
+ */
+export const HYPEFUEL_ADDRESS: Address = "0x42b06b1d9a07Fc3925C518dbf9475E7cA80DC8DF";
+
 export const USDC_DECIMALS = 6;
 
 /** Native HYPE, the HyperEVM gas token. */

@@ -3,6 +3,17 @@
   "version": "0.1.0",
   "description": "Build, sign and price HypeFuel orders. Works in browsers, Node and Cloudflare Workers.",
   "license": "MIT",
+  "keywords": ["hyperevm", "hyperliquid", "hype", "usdc", "eip-3009", "gasless", "viem"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chase-mew/hype-fuel.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://hypefuel.me/docs",
+  "bugs": "https://github.com/chase-mew/hype-fuel/issues",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -1,0 +1,65 @@
+name: Bug report
+description: Something behaved incorrectly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found a security vulnerability? Please do not file it here. See
+        [SECURITY.md](https://github.com/chase-mew/hype-fuel/blob/main/SECURITY.md) and report it
+        privately.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did it happen?
+      options:
+        - Web app (hypefuel.me)
+        - Relayer API (api.hypefuel.me)
+        - Contract
+        - SDK (@hypefuel/sdk)
+        - Docs
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      description: The amount you tried, the wallet you used, and what you clicked.
+      placeholder: |
+        1. Connected MetaMask on HyperEVM
+        2. Entered $5
+        3. Signed the message
+        4. Got "..." instead of HYPE
+    validations:
+      required: true
+
+  - type: input
+    id: transaction
+    attributes:
+      label: Transaction hash or error text
+      description: >
+        If a transaction was submitted, its hash tells us far more than anything else. If the
+        request failed before that, paste the error verbatim.
+
+  - type: input
+    id: address
+    attributes:
+      label: Wallet address
+      description: Optional, and only helpful if funds are involved. A public address, never a key.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Browser and wallet
+      placeholder: Chrome 141 on macOS, Rabby 0.92
