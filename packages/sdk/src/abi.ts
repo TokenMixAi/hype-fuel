@@ -111,6 +111,48 @@ export const hypeFuelAbi = [
     outputs: [{type: "uint256"}],
   },
   {
+    type: "function",
+    name: "rebalance",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [
+      {name: "usdcIn", type: "uint256"},
+      {name: "hypeOut", type: "uint256"},
+    ],
+  },
+  {
+    type: "function",
+    name: "pendingRebalanceUsdc",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{type: "uint256"}],
+  },
+  {
+    type: "function",
+    name: "rebalanceConfig",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      {name: "pool", type: "address"},
+      {name: "usdcIsToken0", type: "bool"},
+      {name: "hypeTarget", type: "uint256"},
+      {name: "hypeFloor", type: "uint256"},
+      {name: "minRebalanceUsdc", type: "uint256"},
+      {name: "maxRebalanceSlippageBps", type: "uint256"},
+      {name: "usdcBalance", type: "uint256"},
+    ],
+  },
+  {
+    type: "event",
+    name: "Rebalanced",
+    inputs: [
+      {name: "caller", type: "address", indexed: true},
+      {name: "usdcIn", type: "uint256", indexed: false},
+      {name: "hypeOut", type: "uint256", indexed: false},
+      {name: "priceUsd1e8", type: "uint256", indexed: false},
+    ],
+  },
+  {
     type: "event",
     name: "Filled",
     inputs: [
@@ -161,6 +203,23 @@ export const hypeFuelAbi = [
     ],
   },
   {type: "error", name: "FeeExceedsAmount", inputs: []},
+  {type: "error", name: "PoolNotSet", inputs: []},
+  {
+    type: "error",
+    name: "RebalanceNotNeeded",
+    inputs: [
+      {name: "hypeBalance", type: "uint256"},
+      {name: "hypeFloor", type: "uint256"},
+    ],
+  },
+  {
+    type: "error",
+    name: "RebalanceTooSmall",
+    inputs: [
+      {name: "usdcIn", type: "uint256"},
+      {name: "minRebalanceUsdc", type: "uint256"},
+    ],
+  },
 ] as const;
 
 /** The USDC reads the client needs. */

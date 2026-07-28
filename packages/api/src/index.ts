@@ -17,9 +17,9 @@ import {
   HYPEREVM_RPC_URL,
   type Order,
 } from "@hypefuel/sdk";
-import {isAddress, type Address, type Hex, type PublicClient} from "viem";
+import {type Hex, type PublicClient} from "viem";
 
-import type {Env} from "./env.js";
+import {fuelAddress, type Env} from "./env.js";
 import {
   ApiError,
   badRequest,
@@ -28,19 +28,12 @@ import {
   json,
   readJsonObject,
 } from "./http.js";
+import {describeKeeperResult, runKeeper} from "./keeper.js";
 import {createRelayer, submitFill} from "./relayer.js";
 import {parseAddress, parseOrder, parseSignature, parseUint, parseUsdcIn} from "./validate.js";
 
 /** Default slippage applied to quotes, in basis points. */
 const DEFAULT_SLIPPAGE_BPS = 100;
-
-function fuelAddress(env: Env): Address {
-  const address = env.FUEL_ADDRESS;
-  if (!address || !isAddress(address)) {
-    throw new ApiError(500, "misconfigured", "The relayer is not configured with a contract address");
-  }
-  return address;
-}
 
 async function enforceRateLimit(request: Request, env: Env): Promise<void> {
   if (!env.RATE_LIMITER) return;
@@ -262,7 +255,7 @@ export default {
           {
             name: "HypeFuel relayer",
             description: "Swap USDC for native HYPE on HyperEVM without holding any gas.",
-            docs: "https://hypefuel.xyz/docs",
+            docs: "https://hypefuel.me/docs",
             endpoints: {
               "GET /v1/config": "Fee schedule, order limits and HYPE inventory",
               "POST /v1/quote": "Price an amount and get the payload to sign",
@@ -300,6 +293,23 @@ export default {
       throw new ApiError(404, "not_found", `No route for ${request.method} ${path}`);
     } catch (error) {
       return errorResponse(error, headers);
+    }
+  },
+
+  /**
+   * Cron entry point for the rebalancing keeper.
+   *
+   * Errors are logged and rethrown so a keeper that cannot restock shows up as a failed
+   * invocation rather than a silent one. Fills are unaffected either way, since users can
+   * always call `rebalance` themselves.
+   */
+  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    const rpcUrl = env.RPC_URL ?? HYPEREVM_RPC_URL;
+    try {
+      console.log(describeKeeperResult(await runKeeper(env, rpcUrl)));
+    } catch (error) {
+      console.error("keeper failed:", error instanceof Error ? error.message : error);
+      throw error;
     }
   },
 };

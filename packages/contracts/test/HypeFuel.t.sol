@@ -16,7 +16,7 @@ contract HypeFuelTest is BaseTest {
 
         (user, userPk) = makeAddrAndKey("user");
 
-        fuel = new HypeFuel(owner, usdc, FEE_BPS, MIN_FEE_USDC, MIN_ORDER_USDC, MAX_ORDER_USDC, MAX_DEVIATION_BPS);
+        fuel = _deployFuel();
         domainSeparator = token.DOMAIN_SEPARATOR();
 
         _setPrice(PRICE_1E8);

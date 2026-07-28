@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {HypeFuel} from "../src/HypeFuel.sol";
 import {IEIP3009} from "../src/interfaces/IEIP3009.sol";
 
@@ -9,6 +10,9 @@ import {IEIP3009} from "../src/interfaces/IEIP3009.sol";
 abstract contract BaseTest is Test {
     address internal constant ORACLE_PX_PRECOMPILE = 0x0000000000000000000000000000000000000807;
     address internal constant SPOT_PX_PRECOMPILE = 0x0000000000000000000000000000000000000808;
+
+    /// @dev Canonical wrapped HYPE. Fixed by the chain, so the contract hardcodes it.
+    address internal constant WHYPE = 0x5555555555555555555555555555555555555555;
 
     uint32 internal constant HYPE_PERP_INDEX = 159;
     uint64 internal constant HYPE_SPOT_INDEX = 107;
@@ -34,10 +38,16 @@ abstract contract BaseTest is Test {
     uint256 internal constant MAX_ORDER_USDC = 50e6;
     uint256 internal constant MAX_DEVIATION_BPS = 500;
 
+    uint256 internal constant HYPE_TARGET = 20 ether;
+    uint256 internal constant HYPE_FLOOR = 10 ether;
+    uint256 internal constant MIN_REBALANCE_USDC = 50e6;
+    uint256 internal constant REBALANCE_SLIPPAGE_BPS = 100;
+
     /// @dev $55.147, the live HYPE price observed while building this.
     uint256 internal constant PRICE_1E8 = 5_514_700_000;
 
     HypeFuel internal fuel;
+    address internal implementation;
     address internal usdc;
 
     /// @dev Cached in setUp so `_sign` makes no external calls.
@@ -47,6 +57,16 @@ abstract contract BaseTest is Test {
     address internal relayer = makeAddr("relayer");
     uint256 internal userPk;
     address internal user;
+
+    /// @dev Deploys a fresh implementation behind an ERC-1967 proxy, initialized in the
+    ///      proxy's constructor exactly as production does it. `usdc` must already be set.
+    function _deployFuel() internal returns (HypeFuel) {
+        implementation = address(new HypeFuel());
+        bytes memory initData = abi.encodeCall(
+            HypeFuel.initialize, (owner, usdc, FEE_BPS, MIN_FEE_USDC, MIN_ORDER_USDC, MAX_ORDER_USDC, MAX_DEVIATION_BPS)
+        );
+        return HypeFuel(payable(address(new ERC1967Proxy(implementation, initData))));
+    }
 
     /// @dev Points both HYPE feeds at the same USD price, expressed at 1e8 scale.
     /// @return The price the contract will actually read back.

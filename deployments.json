@@ -2,20 +2,38 @@
   "hyperevm": {
     "chainId": 999,
     "HypeFuel": {
-      "address": "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861",
-      "deploymentTransaction": "0xdbd74b338183b80e734da26c91551a969e3d7809b3ab2663d438cc3fb88c2fed",
-      "deploymentBlock": 41658820,
-      "deploymentGasUsed": 1543368,
+      "comment": "Interact with `address`. It is an ERC-1967 proxy, so it survives upgrades; `implementation` only matters when verifying one.",
+      "address": "0x42b06b1d9a07Fc3925C518dbf9475E7cA80DC8DF",
+      "implementation": "0xA11f3c51b14240e374ec1944DB27C46BBB891C5F",
+      "proxyDeploymentTransaction": "0xbc4f2d367e3b30e15be68438ae116a2e4248580f78cbc24636782233d6d3f099",
+      "implementationDeploymentTransaction": "0xb156574a00e66e4420bbe210eea85c2d979808eccde546fc08740a864d2e64df",
+      "deploymentBlock": 41690545,
+      "implementationDeploymentGasUsed": 2454169,
       "owner": "0x807571aA5E751b8D6b56b4D652EeE51c3DF55540",
       "usdc": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
-      "constructorArgs": {
+      "initializerArgs": {
         "feeBps": 300,
         "minFeeUsdc": 150000,
         "minOrderUsdc": 1000000,
         "maxOrderUsdc": 50000000,
         "maxOracleDeviationBps": 500
       },
-      "explorer": "https://hyperevmscan.io/address/0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861"
-    }
+      "rebalance": {
+        "pool": "0x6c9A33E3b592C0d65B3Ba59355d5Be0d38259285",
+        "poolComment": "Project X USDC/WHYPE 0.05%",
+        "hypeTarget": "1800000000000000000",
+        "hypeFloor": "900000000000000000",
+        "minRebalanceUsdc": 1000000,
+        "maxRebalanceSlippageBps": 100
+      },
+      "explorer": "https://hyperevmscan.io/address/0x42b06b1d9a07Fc3925C518dbf9475E7cA80DC8DF"
+    },
+    "previousDeployments": [
+      {
+        "comment": "Pre-upgradeability, no rebalancing. Drained and paused; do not use.",
+        "address": "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861",
+        "deploymentBlock": 41658820
+      }
+    ]
   }
 }

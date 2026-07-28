@@ -2,7 +2,7 @@ import {createPublicClient, defineChain, http, type Address, type PublicClient} 
 
 import {hypeFuelAbi, usdcAbi} from "./abi.js";
 import {HYPEREVM_CHAIN_ID, HYPEREVM_RPC_URL, NATIVE_USDC_ADDRESS} from "./constants.js";
-import type {FuelConfig, Order} from "./types.js";
+import type {FuelConfig, Order, RebalanceConfig} from "./types.js";
 
 /** HyperEVM mainnet, for viem. */
 export const hyperEvm = defineChain({
@@ -95,6 +95,55 @@ export async function fetchUsdcBalance(
     abi: usdcAbi,
     functionName: "balanceOf",
     args: [account],
+  });
+}
+
+/** Reads the contract's rebalancing configuration and current USDC holdings. */
+export async function fetchRebalanceConfig(
+  client: PublicClient,
+  fuelAddress: Address,
+): Promise<RebalanceConfig> {
+  const [
+    pool,
+    usdcIsToken0,
+    hypeTarget,
+    hypeFloor,
+    minRebalanceUsdc,
+    maxRebalanceSlippageBps,
+    usdcBalance,
+  ] = await client.readContract({
+    address: fuelAddress,
+    abi: hypeFuelAbi,
+    functionName: "rebalanceConfig",
+  });
+
+  return {
+    pool,
+    usdcIsToken0,
+    hypeTarget,
+    hypeFloor,
+    minRebalanceUsdc,
+    maxRebalanceSlippageBps: Number(maxRebalanceSlippageBps),
+    usdcBalance,
+  };
+}
+
+/**
+ * USDC that a rebalance would spend right now, or zero when one is not warranted.
+ *
+ * Zero covers every reason a rebalance would be refused (inventory above the floor, no USDC to
+ * spend, an amount below the minimum, a paused contract), so a keeper can treat this as its only
+ * precondition. It still throws if the oracle itself is unusable, which is worth surfacing rather
+ * than swallowing.
+ */
+export async function fetchPendingRebalanceUsdc(
+  client: PublicClient,
+  fuelAddress: Address,
+): Promise<bigint> {
+  return client.readContract({
+    address: fuelAddress,
+    abi: hypeFuelAbi,
+    functionName: "pendingRebalanceUsdc",
   });
 }
 

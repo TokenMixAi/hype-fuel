@@ -26,4 +26,4 @@ hyperevm = "https://rpc.hyperliquid.xyz/evm"
 hyperevm_testnet = "https://rpc.hyperliquid-testnet.xyz/evm"
 
 [etherscan]
-hyperevm = {key = "${ETHERSCAN_API_KEY}", chain = 999, url = "https://api.hyperevmscan.io/api"}
+hyperevm = {key = "${ETHERSCAN_API_KEY}", chain = 999, url = "https://api.etherscan.io/v2/api?chainid=999"}

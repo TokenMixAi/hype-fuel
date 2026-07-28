@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
+import {Vm} from "forge-std/Vm.sol";
 import {BaseTest} from "./Base.t.sol";
 import {HypeFuel} from "../src/HypeFuel.sol";
 import {IEIP3009} from "../src/interfaces/IEIP3009.sol";
@@ -21,7 +22,7 @@ contract HypeFuelForkTest is BaseTest {
         usdc = NATIVE_USDC;
         (user, userPk) = makeAddrAndKey("forkUser");
 
-        fuel = new HypeFuel(owner, usdc, FEE_BPS, MIN_FEE_USDC, MIN_ORDER_USDC, MAX_ORDER_USDC, MAX_DEVIATION_BPS);
+        fuel = _deployFuel();
         domainSeparator = IEIP3009(usdc).DOMAIN_SEPARATOR();
 
         deal(usdc, user, 1_000e6);
@@ -101,17 +102,43 @@ contract HypeFuelForkTest is BaseTest {
     }
 
     /// @dev End-to-end against both the real token and the real oracle.
+    ///
+    /// @dev The price comes from the `Filled` event rather than a separate `hypePriceUsd1e8`
+    ///      call. The precompiles resolve against the live chain, so two reads can straddle a
+    ///      real price tick; comparing against a separately-read price failed intermittently
+    ///      for that reason alone. Taking the price the contract actually used keeps this an
+    ///      exact assertion about live pricing without racing the market.
     function test_fork_fillAtLiveOraclePrice() public {
         PrecompileSimulator.init();
 
-        uint256 price = fuel.hypePriceUsd1e8();
         HypeFuel.Order memory order = _order(10e6, 0);
         bytes memory signature = _sign(order, userPk);
 
+        vm.recordLogs();
         vm.prank(relayer);
         uint256 hypeOut = fuel.fill(order, signature);
 
-        assertEq(hypeOut, _expectedHypeOut(10e6, price), "priced at the live oracle");
+        uint256 priceUsed = _filledPrice();
+
+        assertEq(hypeOut, _expectedHypeOut(10e6, priceUsed), "priced at the live oracle");
+        assertGt(priceUsed, 1e8, "live price above $1");
+        assertLt(priceUsed, 10_000e8, "live price below $10,000");
+
+        emit log_named_decimal_uint("live HYPE price (USD)", priceUsed, 8);
         emit log_named_decimal_uint("HYPE delivered for $10", hypeOut, 18);
+    }
+
+    /// @dev Pulls `priceUsd1e8` out of the `Filled` event emitted by the last call.
+    function _filledPrice() internal view returns (uint256) {
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter == address(fuel) && logs[i].topics[0] == HypeFuel.Filled.selector) {
+                (,,, uint256 priceUsd1e8,) = abi.decode(logs[i].data, (uint256, uint256, uint256, uint256, bytes32));
+                return priceUsd1e8;
+            }
+        }
+
+        revert("no Filled event");
     }
 }

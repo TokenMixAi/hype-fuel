@@ -43,6 +43,24 @@ export interface FuelConfig {
   hypeBalance: bigint;
 }
 
+/** Rebalancing configuration, as returned by `HypeFuel.rebalanceConfig()`. */
+export interface RebalanceConfig {
+  /** Uniswap V3 pool the contract buys HYPE from. Zero when rebalancing is not set up. */
+  pool: Address;
+  /** True when USDC is the pool's `token0`. Derived on-chain, not configured. */
+  usdcIsToken0: boolean;
+  /** Inventory level a rebalance aims to restore, in wei. */
+  hypeTarget: bigint;
+  /** Inventory level at or below which a rebalance is permitted, in wei. */
+  hypeFloor: bigint;
+  /** Smallest swap worth making, in USDC base units. */
+  minRebalanceUsdc: bigint;
+  /** Tolerance against the HyperCore price, in basis points. */
+  maxRebalanceSlippageBps: number;
+  /** USDC the contract currently holds, in base units. */
+  usdcBalance: bigint;
+}
+
 /** The result of pricing an order. */
 export interface Quote {
   /** USDC the user pays, in base units. */

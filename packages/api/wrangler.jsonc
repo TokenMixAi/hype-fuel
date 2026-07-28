@@ -7,10 +7,19 @@
   "observability": {
     "enabled": true
   },
+  "routes": [{"pattern": "api.hypefuel.me", "custom_domain": true}],
+  // Declaring a route otherwise turns the workers.dev subdomain off, and that address was
+  // published as the API before the domain existed. The docs point at api.hypefuel.me.
+  "workers_dev": true,
   "vars": {
-    "FUEL_ADDRESS": "0x38454AF33e64bf74789e2d4d9b80E4F90ff0D861",
+    "FUEL_ADDRESS": "0x42b06b1d9a07Fc3925C518dbf9475E7cA80DC8DF",
     "RPC_URL": "https://rpc.hyperliquid.xyz/evm",
     "ALLOWED_ORIGINS": "*"
+  },
+  // Rebalancing keeper. Every minute, because an empty faucet is user-visible and a run that
+  // has nothing to do is a single eth_call.
+  "triggers": {
+    "crons": ["* * * * *"]
   },
   // RELAYER_PRIVATE_KEY is a secret: `wrangler secret put RELAYER_PRIVATE_KEY`.
   "unsafe": {
