@@ -18,7 +18,7 @@ export const USDC_ADDRESS = NATIVE_USDC_ADDRESS;
 
 export const PRODUCT_NAME = "HypeFuel";
 
-export const GITHUB_URL = "https://github.com/chase-mew/hyper-evm-faucet";
+export const GITHUB_URL = "https://github.com/chase-mew/hype-fuel";
 
 /** Amounts offered as one-tap presets, in whole USDC. */
 export const PRESET_AMOUNTS = [2, 5, 10, 25] as const;

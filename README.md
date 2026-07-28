@@ -96,11 +96,12 @@ in exactly one place on the TypeScript side.
 
 ## Development
 
-Requires [Foundry](https://getfoundry.sh), Node 20+ and pnpm 9+.
+Requires [Foundry](https://getfoundry.sh), Node 22+ and pnpm 9+. Wrangler 4 refuses to run on
+older Node versions, so deploying needs 22.
 
 ```bash
-git clone --recurse-submodules https://github.com/chase-mew/hyper-evm-faucet
-cd hyper-evm-faucet
+git clone --recurse-submodules https://github.com/chase-mew/hype-fuel
+cd hype-fuel
 pnpm install
 pnpm --filter @hypefuel/sdk build   # the API and web app import the built SDK
 
