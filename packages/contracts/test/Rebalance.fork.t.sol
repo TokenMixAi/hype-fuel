@@ -87,9 +87,9 @@ contract RebalanceForkTest is BaseTest {
     ///      `maxRebalanceSlippageBps` has to be calibrated against, so it is worth asserting
     ///      rather than assuming.
     ///
-    /// @dev The band is two-sided because {rebalance} bounds against the lower feed while this
-    ///      reads the higher one, and because the live feeds tick between the two reads. Either
-    ///      can put the pool's output marginally above the value computed here.
+    /// @dev The band is two-sided because the live feeds can tick between this read and the
+    ///      rebalance, putting the pool's output marginally either side of the value computed
+    ///      here.
     function test_fork_realExecutionTracksTheOracle() public {
         uint256 price = fuel.hypePriceUsd1e8();
 
