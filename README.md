@@ -118,6 +118,13 @@ it. The worst a swap can pay is therefore the higher feed plus the tolerance, an
 at that same higher feed, recycling stays profitable for as long as `feeBps` (300) sits above the
 tolerance (100).
 
+Bounding off the higher feed widens what a manipulator could in principle take, so it was measured
+against the live pool with the spot feed held at the top of the 5% band. Skewing the pool with $1M
+makes a full refill overpay by **$4.03** and costs the manipulator **$991.79** in pool fees to set
+up and unwind, and past roughly that point the bound rejects the swap outright rather than paying
+more. Extraction scales with the size of a refill while the cost of moving the pool does not, so
+the two only meet if the float grows around 250-fold, which is when this is worth revisiting.
+
 Against real liquidity the all-in cost of a rebalance measures about **5 bps**, rising to 13 bps
 even at $50k. The tolerance is set at 100 bps, providing ample room for an honest swap while
 limiting what a sandwich can capture.
