@@ -152,8 +152,10 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
     uint256 public hypeTarget;
 
     /// @notice HYPE inventory level at or below which a rebalance is permitted.
-    /// @dev Strictly below {hypeTarget}, giving hysteresis: one rebalance lifts the balance
-    ///      clear of this floor, so the next is only possible after real depletion.
+    /// @dev Far enough below {hypeTarget} to sit under the weakest swap the slippage
+    ///      tolerance accepts when the feeds agree. A spread between the feeds, or USDC
+    ///      truncation, can leave a small deficit, so a floor set near this bound may still
+    ///      be eligible for a second swap.
     uint256 public hypeFloor;
 
     /// @notice Smallest USDC amount worth swapping. Stops dust rebalances burning fees.
@@ -175,6 +177,8 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         uint256 priceUsd1e8,
         bytes32 nonce
     );
+    /// @dev `priceUsd1e8` is the lower feed, the price the spend was sized at. The 1e8-scaled
+    ///      execution price is approximately `usdcIn * 1e20 / hypeOut`.
     event Rebalanced(address indexed caller, uint256 usdcIn, uint256 hypeOut, uint256 priceUsd1e8);
     event FeeUpdated(uint256 feeBps, uint256 minFeeUsdc);
     event OrderLimitsUpdated(uint256 minOrderUsdc, uint256 maxOrderUsdc);
@@ -368,8 +372,16 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
     ///
     /// @dev The pool price is not trusted. `minHypeOut` comes from the HyperCore feeds, which
     ///      an AMM manipulator cannot move, so a skewed pool makes this revert rather than
-    ///      execute badly. It is derived from the *lower* feed, the conservative direction
-    ///      when buying, so a divergence between feeds fails closed too.
+    ///      execute badly.
+    ///
+    /// @dev The two feeds are used for different jobs. The spend is sized off the *lower* one,
+    ///      so a divergence can never overspend. The output is bounded off the *higher* one,
+    ///      because a bound priced off the lower feed is unreachable whenever the feeds sit
+    ///      more than {maxRebalanceSlippageBps} apart: {fill} would keep selling across the
+    ///      whole band the deviation guard accepts while every refill reverted, draining
+    ///      inventory with no way to restock it. The worst price a swap can pay is therefore
+    ///      `high / (1 - maxRebalanceSlippageBps)`, and since fills sell at `high`, recycling
+    ///      stays profitable for as long as {feeBps} exceeds {maxRebalanceSlippageBps}.
     ///
     /// @return usdcIn  USDC spent.
     /// @return hypeOut Native HYPE added to inventory.
@@ -377,7 +389,7 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         if (paused) revert Paused();
         if (pool == address(0)) revert PoolNotSet();
 
-        (uint256 low,) = _hypePrices();
+        (uint256 low, uint256 high) = _hypePrices();
 
         uint256 hypeBalance = address(this).balance;
         if (hypeBalance > hypeFloor) revert RebalanceNotNeeded(hypeBalance, hypeFloor);
@@ -386,7 +398,7 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         // The zero case also covers a contract whose rebalance config was never set.
         if (usdcIn == 0 || usdcIn < minRebalanceUsdc) revert RebalanceTooSmall(usdcIn, minRebalanceUsdc);
 
-        uint256 minHypeOut = (usdcIn * USDC_TO_HYPE_SCALE * (BPS - maxRebalanceSlippageBps)) / (low * BPS);
+        uint256 minHypeOut = (usdcIn * USDC_TO_HYPE_SCALE * (BPS - maxRebalanceSlippageBps)) / (high * BPS);
 
         hypeOut = _buyHype(usdcIn, minHypeOut);
 
@@ -560,13 +572,19 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         uint256 minRebalanceUsdc_,
         uint256 maxRebalanceSlippageBps_
     ) external onlyOwner {
-        // The floor must sit strictly below the target, or a rebalance could not lift the
-        // balance clear of it and callers could re-trigger swaps indefinitely.
-        if (hypeFloor_ >= hypeTarget_) revert InvalidRebalanceConfig();
         if (minRebalanceUsdc_ == 0) revert InvalidRebalanceConfig();
         if (maxRebalanceSlippageBps_ == 0 || maxRebalanceSlippageBps_ > MAX_REBALANCE_SLIPPAGE_BPS) {
             revert InvalidRebalanceConfig();
         }
+        // A zero floor would make a rebalance require a balance of exactly zero, which anyone
+        // could deny forever by sending a single wei to {receive}.
+        if (hypeFloor_ == 0) revert InvalidRebalanceConfig();
+        // The floor has to clear the weakest output the slippage tolerance accepts, not merely
+        // sit below the target, or a rebalance can land back under the floor and the next
+        // caller may swap again straight away. Ignoring conversion rounding, and measured at
+        // equal feeds: a spread between them lowers the output further, so a floor set near
+        // this bound can leave a small deficit.
+        if (hypeFloor_ * BPS >= hypeTarget_ * (BPS - maxRebalanceSlippageBps_)) revert InvalidRebalanceConfig();
 
         hypeTarget = hypeTarget_;
         hypeFloor = hypeFloor_;

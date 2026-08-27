@@ -106,10 +106,25 @@ eliminating both the need to trust a router address and any outstanding token ap
 
 The pool price is never relied upon. `minHypeOut` is calculated from the same HyperCore feeds that
 price fills, which an AMM manipulator cannot move, so a skewed pool makes the rebalance revert
-rather than buy HYPE at an inflated price. Two details keep that bound strict: it uses the *lower*
-of the two feeds, the cautious side when buying, and the existing deviation guard already refuses
-to act when the feeds disagree beyond `maxOracleDeviationBps`. A rebalance is never time-critical,
-so failing closed and retrying later is the appropriate behaviour.
+rather than buy HYPE at an inflated price. A rebalance is never time-critical, so failing closed
+and retrying later is the appropriate behaviour.
+
+The two feeds do different jobs. The spend is sized off the *lower* of them, the cautious side
+when buying, so a disagreement between the feeds can never overspend. The bound on what comes back
+uses the *higher* one, because a bound priced off the lower feed becomes unreachable the moment the
+feeds sit further apart than the slippage tolerance: fills would carry on selling across the whole
+`maxOracleDeviationBps` band while every refill reverted, draining inventory with no way to restock
+it. The worst a swap can pay is therefore the higher feed plus the tolerance, and since fills sell
+at that same higher feed, recycling stays profitable for as long as `feeBps` (300) sits above the
+tolerance (100).
+
+Bounding off the higher feed widens what a manipulator could in principle take, so it was measured
+against the live pool with the spot feed held at the top of the 5% band. Skewing the pool with $1M
+makes a full refill overpay by **$4.03** and costs the manipulator **$991.79** on the round trip
+to set up and unwind, and past roughly that point the bound rejects the swap outright rather than
+paying more. Extraction scales with the size of a refill while the cost of moving the pool does
+not, so at current liquidity the two only meet if the float grows around 250-fold. A thinner pool
+would bring that threshold down; either is when this is worth revisiting.
 
 Against real liquidity the all-in cost of a rebalance measures about **5 bps**, rising to 13 bps
 even at $50k. The tolerance is set at 100 bps, providing ample room for an honest swap while
@@ -117,8 +132,12 @@ limiting what a sandwich can capture.
 
 Two parameters determine when it fires. `hypeTarget` is the level a rebalance refills to, and
 `hypeFloor` is the level at or below which one becomes permitted. The gap between them serves a
-purpose: a successful rebalance lifts the balance clear of the floor, so another cannot occur until
-real depletion takes place, and nobody can chain swaps to bleed the pool fee at our expense.
+purpose: a successful rebalance is meant to lift the balance clear of the floor, so another cannot
+occur until real depletion takes place, and nobody can chain swaps to bleed the pool fee at our
+expense. The setter keeps that gap honest by rejecting any floor a rebalance executing at the
+edge of the slippage tolerance would fail to clear when the feeds agree, and by rejecting a floor
+of zero, which would demand a balance of exactly zero and let anyone deny it forever with a
+single wei. A spread between the feeds, or USDC truncation, can still leave a small deficit.
 
 ### The keeper
 
@@ -369,7 +388,7 @@ is the **relayer EOA's HYPE** for gas, which funds both fills and keeper runs. A
 transaction, a small balance lasts a long time.
 
 Raise `hypeTarget` and `hypeFloor` together as inventory grows; they are currently sized for a
-1.8 HYPE float, roughly two back-to-back maximum-size fills. The keeper needs no configuration of
+3.5 HYPE float, roughly four back-to-back maximum-size fills. The keeper needs no configuration of
 its own, and only ever does what `pendingRebalanceUsdc()` tells it to.
 
 ```bash

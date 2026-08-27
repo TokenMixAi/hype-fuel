@@ -218,20 +218,49 @@ contract RebalanceTest is BaseTest {
         assertEq(address(fuel).balance, 5 ether, "no inventory bought");
     }
 
-    /// @dev Buying HYPE, the conservative feed is the lower one. Pricing the bound off the
-    ///      higher feed would let this swap through; it must not.
-    function test_rebalance_boundsAgainstTheLowerFeed() public {
+    /// @dev The output bound tracks the higher feed, so a pool trading anywhere inside the
+    ///      band the deviation guard accepts is still reachable.
+    function test_rebalance_boundsAgainstTheHigherFeed() public {
         _setPrices(50e8, 52e8);
         pool.setPrice(52e8);
+
+        (uint256 usdcIn, uint256 hypeOut) = fuel.rebalance();
+
+        assertEq(usdcIn, _expectedUsdcIn(5 ether, 50e8), "spend still sized off the lower feed");
+        assertEq(hypeOut, (usdcIn * 1e20) / 52e8, "bought at the higher feed");
+    }
+
+    /// @dev Past that band the pool is untrusted again: a swap worse than the higher feed
+    ///      allows has to revert rather than buy expensively.
+    function test_rebalance_revertsBeyondTheHigherFeed() public {
+        _setPrices(50e8, 52e8);
+        pool.setPrice(52e8);
+        pool.setExecutionPenaltyBps(REBALANCE_SLIPPAGE_BPS + 1);
+
+        uint256 usdcIn = _expectedUsdcIn(5 ether, 50e8);
 
         vm.expectRevert(
             abi.encodeWithSelector(
                 HypeFuel.InsufficientOutput.selector,
-                (_expectedUsdcIn(5 ether, 50e8) * 1e20) / 52e8,
-                (_expectedUsdcIn(5 ether, 50e8) * 1e20 * (BPS - REBALANCE_SLIPPAGE_BPS)) / (50e8 * BPS)
+                (usdcIn * 1e20 * (BPS - REBALANCE_SLIPPAGE_BPS - 1)) / (52e8 * BPS),
+                (usdcIn * 1e20 * (BPS - REBALANCE_SLIPPAGE_BPS)) / (52e8 * BPS)
             )
         );
         fuel.rebalance();
+    }
+
+    /// @dev The liveness property behind that choice. At the widest divergence the deviation
+    ///      guard tolerates, {fill} still sells at the higher feed, so a refill priced off the
+    ///      lower one would revert every time and let inventory drain to nothing.
+    function test_rebalance_reachesAPoolAtTheEdgeOfTheDeviationBand() public {
+        uint256 spot = (50e8 * (BPS + MAX_DEVIATION_BPS)) / BPS;
+        _setPrices(50e8, spot);
+        pool.setPrice(spot);
+
+        (, uint256 hypeOut) = fuel.rebalance();
+
+        assertGt(hypeOut, 0, "refill executes across the whole accepted band");
+        assertGt(address(fuel).balance, HYPE_FLOOR, "inventory restocked clear of the floor");
     }
 
     /// @dev Sizing uses the lower feed too, so a divergence never overspends.
@@ -396,6 +425,45 @@ contract RebalanceTest is BaseTest {
         fuel.setRebalanceConfig(HYPE_TARGET, HYPE_FLOOR, MIN_REBALANCE_USDC, aboveMaxSlippage);
 
         vm.stopPrank();
+    }
+
+    /// @dev A zero floor demands a balance of exactly zero, and {receive} is open to anyone,
+    ///      so a single wei would disable rebalancing for good.
+    function test_setRebalanceConfig_rejectsAZeroFloor() public {
+        vm.prank(owner);
+        vm.expectRevert(HypeFuel.InvalidRebalanceConfig.selector);
+        fuel.setRebalanceConfig(HYPE_TARGET, 0, MIN_REBALANCE_USDC, REBALANCE_SLIPPAGE_BPS);
+    }
+
+    /// @dev Sitting below the target is not enough. A floor inside the slippage band can be
+    ///      left unmet by the very rebalance meant to clear it, so the next caller could swap
+    ///      again immediately with no fill in between.
+    function test_setRebalanceConfig_rejectsAFloorInsideTheSlippageBand() public {
+        uint256 weakestOutput = (HYPE_TARGET * (BPS - REBALANCE_SLIPPAGE_BPS)) / BPS;
+
+        vm.startPrank(owner);
+
+        vm.expectRevert(HypeFuel.InvalidRebalanceConfig.selector);
+        fuel.setRebalanceConfig(HYPE_TARGET, weakestOutput, MIN_REBALANCE_USDC, REBALANCE_SLIPPAGE_BPS);
+
+        fuel.setRebalanceConfig(HYPE_TARGET, weakestOutput - 1, MIN_REBALANCE_USDC, REBALANCE_SLIPPAGE_BPS);
+
+        vm.stopPrank();
+
+        assertEq(fuel.hypeFloor(), weakestOutput - 1, "just clear of the band is accepted");
+    }
+
+    /// @dev The boundary case the floor rule protects: a rebalance that executes at the very
+    ///      edge of the tolerance still has to lift the balance clear of the floor.
+    function test_rebalance_atTheSlippageBoundaryStillClearsTheFloor() public {
+        pool.setExecutionPenaltyBps(REBALANCE_SLIPPAGE_BPS);
+        vm.deal(address(fuel), 0);
+
+        fuel.rebalance();
+
+        assertGt(address(fuel).balance, HYPE_FLOOR, "one rebalance ends the eligibility");
+        vm.expectRevert(abi.encodeWithSelector(HypeFuel.RebalanceNotNeeded.selector, address(fuel).balance, HYPE_FLOOR));
+        fuel.rebalance();
     }
 
     function test_admin_rebalanceSettersAreOwnerOnly() public {

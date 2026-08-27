@@ -21,8 +21,8 @@
       "rebalance": {
         "pool": "0x6c9A33E3b592C0d65B3Ba59355d5Be0d38259285",
         "poolComment": "Project X USDC/WHYPE 0.05%",
-        "hypeTarget": "1800000000000000000",
-        "hypeFloor": "900000000000000000",
+        "hypeTarget": "3500000000000000000",
+        "hypeFloor": "1750000000000000000",
         "minRebalanceUsdc": 1000000,
         "maxRebalanceSlippageBps": 100
       },
