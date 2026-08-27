@@ -120,10 +120,11 @@ tolerance (100).
 
 Bounding off the higher feed widens what a manipulator could in principle take, so it was measured
 against the live pool with the spot feed held at the top of the 5% band. Skewing the pool with $1M
-makes a full refill overpay by **$4.03** and costs the manipulator **$991.79** in pool fees to set
-up and unwind, and past roughly that point the bound rejects the swap outright rather than paying
-more. Extraction scales with the size of a refill while the cost of moving the pool does not, so
-the two only meet if the float grows around 250-fold, which is when this is worth revisiting.
+makes a full refill overpay by **$4.03** and costs the manipulator **$991.79** on the round trip
+to set up and unwind, and past roughly that point the bound rejects the swap outright rather than
+paying more. Extraction scales with the size of a refill while the cost of moving the pool does
+not, so at current liquidity the two only meet if the float grows around 250-fold. A thinner pool
+would bring that threshold down; either is when this is worth revisiting.
 
 Against real liquidity the all-in cost of a rebalance measures about **5 bps**, rising to 13 bps
 even at $50k. The tolerance is set at 100 bps, providing ample room for an honest swap while
@@ -131,11 +132,12 @@ limiting what a sandwich can capture.
 
 Two parameters determine when it fires. `hypeTarget` is the level a rebalance refills to, and
 `hypeFloor` is the level at or below which one becomes permitted. The gap between them serves a
-purpose: a successful rebalance lifts the balance clear of the floor, so another cannot occur until
-real depletion takes place, and nobody can chain swaps to bleed the pool fee at our expense. The
-setter keeps that gap honest by rejecting any floor a rebalance executing at the edge of the
-slippage tolerance would fail to clear, and by rejecting a floor of zero, which would demand a
-balance of exactly zero and let anyone deny it forever with a single wei.
+purpose: a successful rebalance is meant to lift the balance clear of the floor, so another cannot
+occur until real depletion takes place, and nobody can chain swaps to bleed the pool fee at our
+expense. The setter keeps that gap honest by rejecting any floor a rebalance executing at the
+edge of the slippage tolerance would fail to clear when the feeds agree, and by rejecting a floor
+of zero, which would demand a balance of exactly zero and let anyone deny it forever with a
+single wei. A spread between the feeds, or USDC truncation, can still leave a small deficit.
 
 ### The keeper
 

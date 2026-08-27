@@ -152,9 +152,10 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
     uint256 public hypeTarget;
 
     /// @notice HYPE inventory level at or below which a rebalance is permitted.
-    /// @dev Far enough below {hypeTarget} to sit under even the weakest swap output the
-    ///      slippage tolerance accepts, giving hysteresis: one rebalance lifts the balance
-    ///      clear of this floor, so the next is only possible after real depletion.
+    /// @dev Far enough below {hypeTarget} to sit under the weakest swap the slippage
+    ///      tolerance accepts when the feeds agree. A spread between the feeds, or USDC
+    ///      truncation, can leave a small deficit, so a floor set near this bound may still
+    ///      be eligible for a second swap.
     uint256 public hypeFloor;
 
     /// @notice Smallest USDC amount worth swapping. Stops dust rebalances burning fees.
@@ -176,8 +177,8 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         uint256 priceUsd1e8,
         bytes32 nonce
     );
-    /// @dev `priceUsd1e8` is the lower feed, the price the spend was sized at. What the swap
-    ///      actually paid is `usdcIn / hypeOut`.
+    /// @dev `priceUsd1e8` is the lower feed, the price the spend was sized at. The 1e8-scaled
+    ///      execution price is approximately `usdcIn * 1e20 / hypeOut`.
     event Rebalanced(address indexed caller, uint256 usdcIn, uint256 hypeOut, uint256 priceUsd1e8);
     event FeeUpdated(uint256 feeBps, uint256 minFeeUsdc);
     event OrderLimitsUpdated(uint256 minOrderUsdc, uint256 maxOrderUsdc);
@@ -580,8 +581,9 @@ contract HypeFuel is Initializable, Ownable, ReentrancyGuard, UUPSUpgradeable {
         if (hypeFloor_ == 0) revert InvalidRebalanceConfig();
         // The floor has to clear the weakest output the slippage tolerance accepts, not merely
         // sit below the target, or a rebalance can land back under the floor and the next
-        // caller may swap again straight away. Measured at equal feeds: a spread between them
-        // lowers the output further, so a floor set near this bound can leave a small deficit.
+        // caller may swap again straight away. Ignoring conversion rounding, and measured at
+        // equal feeds: a spread between them lowers the output further, so a floor set near
+        // this bound can leave a small deficit.
         if (hypeFloor_ * BPS >= hypeTarget_ * (BPS - maxRebalanceSlippageBps_)) revert InvalidRebalanceConfig();
 
         hypeTarget = hypeTarget_;
